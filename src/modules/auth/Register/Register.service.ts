@@ -99,7 +99,7 @@ export const RegisterService = async (
       });
     }
     return user;
-  });
+  },{timeout: 15000});
 
   const { refreshToken, accessToken } = await createSession(user.id, meta);
   return {
