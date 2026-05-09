@@ -3,6 +3,7 @@ import { authMiddleware } from "../../common/middleware/auth.middleware.js"
 import validate from "../../common/middleware/validateResource.js"
 import {
     createPostController,
+    recommendPostsController,
     deletePostController,
     getPostByIdController,
     listMyPostsController,
@@ -21,6 +22,7 @@ router.post("/", validate(createPostSchema), createPostController)
 router.get("/", listPublishedPostsController)
 router.get("/me", listMyPostsController);
 router.get("/saved", listSavedPostsController)
+router.get("/recommendations", recommendPostsController)
 router.get("/:postId", getPostByIdController)
 router.patch("/:postId", validate(updatePostSchema), updatePostController)
 router.delete("/:postId", deletePostController)

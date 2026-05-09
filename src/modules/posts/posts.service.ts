@@ -1,6 +1,8 @@
 import { prisma } from "../../lib/prisma.js";
 import type { Prisma } from "../../generated/prisma/client.js";
 import type { CreatePostInput, SearchPostsQuery, UpdatePostInput } from "./posts.schema.js";
+import { getGeminiEmbedding } from "../../common/utils/aiEmbedding.js"
+
 
 const postSelect = {
     id: true,
@@ -23,6 +25,12 @@ const postSelect = {
     },
 }
 
+interface RecommendedPost {
+    id: number;
+    title: string;
+    distance: number;
+}
+
 export const createPostService = async (data: CreatePostInput,userId: number) => {
     const post = await prisma.post.create({
     data: {
@@ -36,7 +44,30 @@ export const createPostService = async (data: CreatePostInput,userId: number) =>
     },
     select: postSelect,
     })
+
+    const fullText = `${data.title} ${data.description}`
+    const embeddingValues = await getGeminiEmbedding(fullText)
+    const vectorString = `[${embeddingValues.join(",")}]`
+    await prisma.$executeRawUnsafe(
+        `UPDATE "Post" SET embedding = '${vectorString}'::vector WHERE id = ${post.id}`
+    )
+    
     return post
+}
+
+export const recommendPosts = async (userInterests: string[]) => {
+    const interestsText = userInterests.length > 0 ? userInterests.join(" ") : "general"
+    const userVectorValues = await getGeminiEmbedding(interestsText)
+    const vectorString = `[${userVectorValues.join(",")}]`
+
+    const posts = await prisma.$queryRaw<RecommendedPost[]>`
+        SELECT id, title, (embedding <=> ${vectorString}::vector) AS distance
+        FROM "Post"
+        WHERE status = 'PUBLISHED'
+        ORDER BY distance ASC
+        LIMIT 10
+    `
+    return posts
 }
 
 const countOccurrences = (text: string, query: string) => {

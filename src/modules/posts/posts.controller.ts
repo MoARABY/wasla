@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import {createPostService,deletePostService,getPostByIdService,listMyPostsService,listPublishedPostsService,listSavedPostsService,savePostService,unsavePostService,updatePostService,} from "./posts.service.js";
+import {createPostService,recommendPosts,deletePostService,getPostByIdService,listMyPostsService,listPublishedPostsService,listSavedPostsService,savePostService,unsavePostService,updatePostService,} from "./posts.service.js";
 import { searchPostsQuerySchema } from "./posts.schema.js";
 import type { CreatePostInput, SearchPostsQuery, UpdatePostInput } from "./posts.schema.js";
 import { getErrorMessage, sendError } from "../../common/utils/httpError.js";
+import { prisma } from "../../lib/prisma.js";
 
 const postIdSchema = z.coerce.number().int().positive();
 
@@ -30,6 +31,26 @@ export const createPostController = async (req: Request, res: Response) => {
     return sendError(res, 400, getErrorMessage(err, "Create post failed"));
   }
 };
+
+export const recommendPostsController = async (req: Request, res: Response) => {
+  try {
+    const userId = getUserId(req)
+    if (!userId) {
+        return sendError(res, 401, "Unauthorized")
+    } 
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) {
+      return sendError(res, 404, "User not found")
+    }
+    const interests = user.interests_List || []
+    const recommendations = await recommendPosts(interests)
+
+    return res.json({ recommendations })
+    
+  } catch (err: unknown) {
+    return sendError(res, 400, getErrorMessage(err, "Fetch recommendations failed"))
+  }
+}
 
 export const listPublishedPostsController = async (req: Request, res: Response) => {
   try {
