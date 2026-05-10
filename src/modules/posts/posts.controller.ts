@@ -38,12 +38,12 @@ export const recommendPostsController = async (req: Request, res: Response) => {
     if (!userId) {
         return sendError(res, 401, "Unauthorized")
     } 
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { interests_List: true, available_balance: true } })
     if (!user) {
       return sendError(res, 404, "User not found")
     }
     const interests = user.interests_List || []
-    const recommendations = await recommendPosts(interests)
+    const recommendations = await recommendPosts(interests, user.available_balance)
 
     return res.json({ recommendations })
     

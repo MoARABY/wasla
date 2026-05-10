@@ -55,7 +55,7 @@ export const createPostService = async (data: CreatePostInput,userId: number) =>
     return post
 }
 
-export const recommendPosts = async (userInterests: string[]) => {
+export const recommendPosts = async (userInterests: string[],available_balance: number) => {
     const interestsText = userInterests.length > 0 ? userInterests.join(" ") : "general"
     const userVectorValues = await getGeminiEmbedding(interestsText)
     const vectorString = `[${userVectorValues.join(",")}]`
@@ -64,6 +64,7 @@ export const recommendPosts = async (userInterests: string[]) => {
         SELECT id, title, (embedding <=> ${vectorString}::vector) AS distance
         FROM "Post"
         WHERE status = 'PUBLISHED'
+            AND assigned_time_credits <= ${available_balance}
         ORDER BY distance ASC
         LIMIT 10
     `
