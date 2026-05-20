@@ -28,6 +28,7 @@ const postSelect = {
 interface RecommendedPost {
     id: number;
     title: string;
+    description: string;
     distance: number;
 }
 
@@ -49,7 +50,7 @@ export const createPostService = async (data: CreatePostInput,userId: number) =>
     const embeddingValues = await getGeminiEmbedding(fullText)
     const vectorString = `[${embeddingValues.join(",")}]`
     await prisma.$executeRawUnsafe(
-        `UPDATE "Post" SET embedding = '${vectorString}'::vector WHERE id = ${post.id}`
+        `UPDATE "posts" SET embedding = '${vectorString}'::vector WHERE id = ${post.id}`
     )
     
     return post
@@ -61,8 +62,8 @@ export const recommendPosts = async (userInterests: string[],available_balance: 
     const vectorString = `[${userVectorValues.join(",")}]`
 
     const posts = await prisma.$queryRaw<RecommendedPost[]>`
-        SELECT id, title, (embedding <=> ${vectorString}::vector) AS distance
-        FROM "Post"
+        SELECT id, title, description, (embedding <=> ${vectorString}::vector) AS distance
+        FROM "posts"
         WHERE status = 'PUBLISHED'
             AND assigned_time_credits <= ${available_balance}
         ORDER BY distance ASC

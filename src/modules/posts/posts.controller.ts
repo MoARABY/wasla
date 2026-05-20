@@ -56,7 +56,7 @@ export const listPublishedPostsController = async (req: Request, res: Response) 
   try {
     const filters: SearchPostsQuery = searchPostsQuerySchema.parse(req.query)
     const posts = await listPublishedPostsService(filters)
-    return res.json({ posts })
+    return res.status(200).json({ posts })
   } catch (err: unknown) {
     return sendError(res, 400, getErrorMessage(err, "Fetch posts failed"))
   }

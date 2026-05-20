@@ -1,16 +1,20 @@
-import {GoogleGenerativeAI} from "@google/generative-ai"
+import { GoogleGenAI } from "@google/genai"
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
-export const getGeminiEmbedding = async (text: string) => {
-    try {
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" })
-
-        const result = await model.embedContent(text)
-        const embedding = result.embedding
-        return embedding.values
-    } catch (error) {
-        console.error("Gemini Embedding Error:", error)
-        throw error
+export const getGeminiEmbedding = async (text: string): Promise<number[]> => {
+try {
+    const response = await ai.models.embedContent({
+        model: 'gemini-embedding-2',
+        contents: text,
+    })
+    if (response && response.embeddings?.[0]?.values) {
+        return response.embeddings[0].values
     }
+    
+    throw new Error("Failed to generate embedding array")
+} catch (error) {
+    console.error("Gemini Embedding Error inside Utils:", error)
+    throw error
+}
 }
